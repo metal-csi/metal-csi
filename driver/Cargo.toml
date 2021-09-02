@@ -1,0 +1,43 @@
+[package]
+name = "zed-csi"
+version = "0.1.0"
+edition = "2018"
+workspace = "../"
+
+[dependencies]
+# Logging
+log = { version = "0.4" }
+flexi_logger = { version = "0.18" }
+
+# Utility
+anyhow = { version = "1.0" }
+lazy_static = { version = "1.4" }
+derive_more = { version = "0.99" }
+regex = { version = "1.5" }
+
+# CLI Args
+clap = { version = "2.33" }
+structopt = { version = "0.3" }
+
+# Async
+tokio = { version = "1.7", features = ["full"] }
+async-trait = { version = "0.1" }
+futures = { version = "0.3" }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+serde_yaml = { version = "0.8" }
+
+# SSH
+thrussh = { version = "0.33", features = ["openssl"] }
+thrussh-keys = { version = "0.21", features = ["openssl"] }
+
+# Tonic
+tonic = { version = "0.5" }
+prost = { version = "0.8" }
+prost-types = { version = "0.8" }
+async-stream = { version = "0.3" }
+
+[build-dependencies]
+tonic-build = { version = "0.5" }
