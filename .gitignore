@@ -1,4 +1,5 @@
 /target
 /reference
+/cache
 dev.yml
 .tmp

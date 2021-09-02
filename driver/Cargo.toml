@@ -30,6 +30,7 @@ serde_json = { version = "1.0" }
 serde_yaml = { version = "0.8" }
 
 # SSH
+openssl-sys = { version = "0.9", features = ["vendored"] }
 thrussh = { version = "0.33", features = ["openssl"] }
 thrussh-keys = { version = "0.21", features = ["openssl"] }
 
