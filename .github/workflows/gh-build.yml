@@ -1,0 +1,35 @@
+name: Build
+on: push
+
+jobs:
+  build:
+    name: Build zed-csi
+
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+          - target: aarch64-unknown-linux-gnu
+          - target: armv7-unknown-linux-gnueabihf
+
+    runs-on: 'ubuntu-latest'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: '${{ matrix.target }}'
+          override: true
+          default: true
+
+      - name: 'Build binary for ${{ matrix.target }}'
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: '--all-features --target ${{ matrix.target }}'
+
