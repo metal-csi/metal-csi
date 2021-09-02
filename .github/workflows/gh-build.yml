@@ -12,5 +12,22 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build binary artifacts
-        run: |-
-          ./build/build.sh
+        run: ./build/build.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: amd64
+          path: out/zed-csi.amd64.lz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: arm64
+          path: out/zed-csi.arm64.lz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: armv7
+          path: out/zed-csi.armv7.lz
