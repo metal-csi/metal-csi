@@ -1,0 +1,29 @@
+name: Build zed-csi artifacts
+on: push
+
+jobs:
+  build:
+    name: Build zed-csi
+    runs-on: 'ubuntu-20.04'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build binary artifacts
+        run: ./build/build.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: zed-csi
+          path: ./out/zed-csi.*.lz
+
+      - name: Create release with assets
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ./out/zed-csi.amd64.lz
+            ./out/zed-csi.arm64.lz
+            ./out/zed-csi.armv7.lz

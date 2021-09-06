@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-docker build -t zed-csi-builder -f build/Dockerfile .
-
 function do_run() {
     docker run --rm -t -u $UID:$UID \
         -v "${PWD}/driver:/app/driver" \
@@ -22,6 +20,7 @@ function build_target() {
     do_run cp "target/${target}/release/zed-csi.lz" "out/zed-csi.$tag.lz"
 }
 
+docker build -t zed-csi-builder -f build/Dockerfile .
 build_target x86_64-unknown-linux-gnu amd64
 build_target aarch64-unknown-linux-gnu arm64
 build_target armv7-unknown-linux-gnueabihf armv7
