@@ -14,7 +14,7 @@ jobs:
         run: ./build/build.sh
 
       - name: Upload artifact
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v2
         with:
           name: zed-csi
           path: ./out/zed-csi.*.lz
@@ -23,7 +23,29 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            ./out/zed-csi.amd64.lz
-            ./out/zed-csi.arm64.lz
-            ./out/zed-csi.armv7.lz
+          files: ./out/zed-csi.*.lz
+
+      - name: Create release with assets
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+        if: startsWith(github.ref, 'refs/tags/')
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        if: startsWith(github.ref, 'refs/tags/')
+
+      - name: Login to container registry
+        if: startsWith(github.ref, 'refs/tags/')
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Run Crossbuild
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |-
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -f dist.dockerfile \
+            -t "ghcr.io/zed-csi/zed-csi:${TAG#refs/tags/}" \
+            -t "ghcr.io/zed-csi/zed-csi:build-$(date '+%Y%m%d%H%M')" --push .

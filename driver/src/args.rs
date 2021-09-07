@@ -9,7 +9,7 @@ pub struct Args {
     /// Log level to use [trace, debug, info, warn, error]
     pub log_level: flexi_logger::LevelFilter,
 
-    #[structopt(short("c"), long("config"), default_value = "/etc/zfscsi.yml")]
+    #[structopt(short("c"), long("config"), default_value = "/etc/zed-csi.yml")]
     /// Configuration file path
     pub config_path: PathBuf,
 }

@@ -1,0 +1,36 @@
+---
+node:
+  initiator_iqn_mode:
+    type: detect
+  control_mode:
+    type: local
+    sudo: true
+
+controller:
+  control_mode:
+    type: ssh
+    sudo: true
+    user: 'csiuser'
+    host: 'localhost'
+    port: 22
+    private_key: "not set"
+
+driver:
+  name: zfs-csi
+  reclaim_policy: retain
+  storage_class: 'iscsi'
+  default_class: false
+
+iscsi:
+  base_iqn: 'not set'
+  target_portal: '127.0.0.1'
+  attributes:
+    authentication: '0'
+    demo_mode_write_protect: '0'
+    generate_node_acls: '1'
+    cache_dynamic_acls: '1'
+
+zfs:
+  parent_dataset: 'tank/csi/'
+  attributes:
+    compression: lz4
