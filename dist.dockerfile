@@ -8,12 +8,12 @@ RUN mkdir -p /dist/usr/bin /dist/etc
 WORKDIR /dist
 
 # Pull artifact for the version and platform
-ARG CSIVERSION="0.0.1-alpha"
+ARG CSIVERSION="v0.0.1-alpha"
 ARG TARGETPLATFORM
 SHELL ["/bin/bash", "-c"]
 RUN PF_NOPREFIX=$(echo -n ${TARGETPLATFORM#*\/}) ; \
     PF_TAG=$(echo -n ${PF_NOPREFIX//\//}) ; \
-    curl -sL "https://github.com/zed-csi/zed-csi/releases/download/v${CSIVERSION}/zed-csi.${PF_TAG}.lz" | lzip -d > "/dist/usr/bin/zed-csi"
+    curl -sL "https://github.com/zed-csi/zed-csi/releases/download/${CSIVERSION}/zed-csi.${PF_TAG}.lz" | lzip -d > "/dist/usr/bin/zed-csi"
 
 # Finalize dist directory
 RUN chmod +x /dist/usr/bin/zed-csi
