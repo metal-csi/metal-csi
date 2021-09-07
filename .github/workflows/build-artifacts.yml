@@ -47,5 +47,5 @@ jobs:
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             -f dist.dockerfile \
-            -t "ghcr.io/zed-csi/zed-csi:${TAG#refs/tags/}" \
+            -t "ghcr.io/zed-csi/zed-csi:${GITHUB_REF#refs/tags/}" \
             -t "ghcr.io/zed-csi/zed-csi:build-$(date '+%Y%m%d%H%M')" --push .
