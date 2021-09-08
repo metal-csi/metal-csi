@@ -20,11 +20,10 @@ impl App {
         let identity_service = spec::identity_server::IdentityServer::new(self.clone());
         let node_service = spec::node_server::NodeServer::new(self.clone());
 
-        let path = "/tmp/csi.sock";
-        tokio::fs::create_dir_all(Path::new(path).parent().unwrap()).await?;
+        tokio::fs::create_dir_all(Path::new(&self.csi_path).parent().unwrap()).await?;
 
         let incoming = {
-            let uds = UnixListener::bind(path)?;
+            let uds = UnixListener::bind(&self.csi_path)?;
 
             async_stream::stream! {
                 while let item = uds.accept().map_ok(|(st, _)| UnixStream(st)).await {

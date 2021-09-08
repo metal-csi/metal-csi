@@ -3,6 +3,7 @@ use crate::config::Configuration;
 use crate::control::ControlModule;
 use crate::error::Result;
 use crate::zfs::ZFS;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 #[derive(Debug, Deref, DerefMut, Clone)]
@@ -11,6 +12,7 @@ pub struct App(Arc<InnerApp>);
 #[derive(Debug)]
 pub struct InnerApp {
     pub config: Configuration,
+    pub csi_path: PathBuf,
 }
 
 impl App {
@@ -23,8 +25,9 @@ impl App {
     }
 
     pub fn new(args: Args) -> Result<Self> {
+        let csi_path = args.csi_path.clone();
         let config = Configuration::new(args)?;
-        Ok(Self(Arc::new(InnerApp { config })))
+        Ok(Self(Arc::new(InnerApp { config, csi_path })))
     }
 
     pub async fn control_controller<T: From<ControlModule>>(&self) -> Result<T> {
@@ -41,16 +44,15 @@ impl App {
 
     pub async fn run(&self) -> Result<()> {
         info!("Init started");
-        tokio::spawn(self.clone().start_csi_services());
 
-        let zfs: ZFS = self.control_controller().await?;
-        zfs.list_datasets().await?;
-        zfs.get_dataset("hoard/mongo").await?;
-        drop(zfs);
-
-        let mut iscsi = self.targetcli().await?;
-        iscsi.list_iscsi_devices().await?;
-        iscsi.close().await?;
+        let zelf = self.clone();
+        tokio::spawn(async move {
+            info!("Spawning CSI task");
+            match zelf.start_csi_services().await {
+                Ok(_) => {}
+                Err(e) => warn!("CSI driver failure! {}", e),
+            };
+        });
 
         tokio::signal::ctrl_c().await?;
 

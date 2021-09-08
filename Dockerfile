@@ -16,7 +16,7 @@ WORKDIR /app
 # To properly cache dependencies
 COPY Cargo.toml Cargo.lock /app/
 COPY driver/Cargo.toml /app/driver/Cargo.toml
-RUN mkdir -p driver/src/ && touch driver/src/main.rs && (cargo build --release || true)
+RUN mkdir -p driver/src/ /plugin && touch driver/src/main.rs && (cargo build --release || true)
 
 # Full build
 COPY driver/ /app/driver/

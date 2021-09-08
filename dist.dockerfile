@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     'curl' 'ca-certificates' 'lzip' && \
     rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /dist/usr/bin /dist/etc
+RUN mkdir -p /dist/usr/bin /dist/etc /dist/plugin
 WORKDIR /dist
 
 # Pull artifact for the version and platform

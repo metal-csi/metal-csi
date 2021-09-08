@@ -12,6 +12,10 @@ pub struct Args {
     #[structopt(short("c"), long("config"), default_value = "/etc/zed-csi.yml")]
     /// Configuration file path
     pub config_path: PathBuf,
+
+    #[structopt(long("csi-path"), default_value = "/plugin/csi.sock")]
+    /// Configuration file path
+    pub csi_path: PathBuf,
 }
 
 impl Args {
