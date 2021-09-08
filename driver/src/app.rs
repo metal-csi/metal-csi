@@ -5,6 +5,7 @@ use crate::error::Result;
 use crate::zfs::ZFS;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::{signal, sync::watch, time};
 
 #[derive(Debug, Deref, DerefMut, Clone)]
 pub struct App(Arc<InnerApp>);
@@ -13,6 +14,8 @@ pub struct App(Arc<InnerApp>);
 pub struct InnerApp {
     pub config: Configuration,
     pub csi_path: PathBuf,
+    pub shutdown_tx: watch::Sender<bool>,
+    pub shutdown_rx: watch::Receiver<bool>,
 }
 
 impl App {
@@ -25,9 +28,15 @@ impl App {
     }
 
     pub fn new(args: Args) -> Result<Self> {
+        let (shutdown_tx, shutdown_rx) = watch::channel(false);
         let csi_path = args.csi_path.clone();
         let config = Configuration::new(args)?;
-        Ok(Self(Arc::new(InnerApp { config, csi_path })))
+        Ok(Self(Arc::new(InnerApp {
+            config,
+            csi_path,
+            shutdown_tx,
+            shutdown_rx,
+        })))
     }
 
     pub async fn control_controller<T: From<ControlModule>>(&self) -> Result<T> {
@@ -50,13 +59,22 @@ impl App {
             info!("Spawning CSI task");
             match zelf.start_csi_services().await {
                 Ok(_) => {}
-                Err(e) => warn!("CSI driver failure! {}", e),
+                Err(e) => {
+                    error!("CSI driver failure! {}", e);
+                    std::process::exit(2);
+                }
             };
         });
 
-        tokio::signal::ctrl_c().await?;
+        signal::ctrl_c().await?;
 
-        info!("Shutting down");
+        self.shutdown_tx.send(true)?;
+        info!("Shutdown signal sent, waiting on services to stop");
+        while self.shutdown_tx.receiver_count() > 1 {
+            time::sleep(time::Duration::from_millis(100)).await;
+        }
+
+        info!("Shutdown complete");
         Ok(())
     }
 }
