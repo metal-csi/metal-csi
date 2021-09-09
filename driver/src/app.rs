@@ -12,6 +12,7 @@ pub struct App(Arc<InnerApp>);
 
 #[derive(Debug)]
 pub struct InnerApp {
+    pub node_id: String,
     pub config: Configuration,
     pub csi_path: PathBuf,
     pub shutdown_tx: watch::Sender<bool>,
@@ -29,9 +30,11 @@ impl App {
 
     pub fn new(args: Args) -> Result<Self> {
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
+        let node_id = args.node_id.clone();
         let csi_path = args.csi_path.clone();
         let config = Configuration::new(args)?;
         Ok(Self(Arc::new(InnerApp {
+            node_id,
             config,
             csi_path,
             shutdown_tx,

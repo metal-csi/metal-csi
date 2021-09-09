@@ -46,7 +46,6 @@ pub struct DriverOptions {
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(default, rename_all = "snake_case")]
 pub struct NodeOptions {
-    pub node_id: String,
     pub initiator_iqn_mode: InitiatorIQNMode,
     pub control_mode: ControlMode,
 }

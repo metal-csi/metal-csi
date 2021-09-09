@@ -114,7 +114,7 @@ impl Node for App {
     ) -> Result<Response<NodeGetInfoResponse>, Status> {
         info!("Node information request received");
         let reply = NodeGetInfoResponse {
-            node_id: self.config.node.node_id.to_string(),
+            node_id: self.node_id.to_string(),
             max_volumes_per_node: 0,
             accessible_topology: None,
         };

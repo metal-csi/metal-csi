@@ -16,6 +16,10 @@ pub struct Args {
     #[structopt(long("csi-path"), default_value = "/plugin/csi.sock")]
     /// Configuration file path
     pub csi_path: PathBuf,
+
+    #[structopt(long("node-id"))]
+    /// Configuration file path
+    pub node_id: String,
 }
 
 impl Args {
