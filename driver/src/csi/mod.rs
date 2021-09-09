@@ -56,6 +56,7 @@ impl App {
             })
             .await?;
 
+        fs::remove_file(&self.csi_path).await?;
         warn!("CSI Services stopped");
         drop(rx_drop); //This is to ensure that the receiver count stays above baseline while the service is still shutting down
         Ok(())
