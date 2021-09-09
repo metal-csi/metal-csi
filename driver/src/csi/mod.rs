@@ -42,6 +42,8 @@ impl App {
         let rx_drop = self.shutdown_rx.clone();
 
         Server::builder()
+            .concurrency_limit_per_connection(64)
+            .accept_http1(true)
             .add_service(controller_service)
             .add_service(identity_service)
             .add_service(node_service)
