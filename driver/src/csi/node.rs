@@ -99,7 +99,7 @@ impl Node for App {
 
     async fn node_get_capabilities(
         &self,
-        _: Request<NodeGetCapabilitiesRequest>,
+        request: Request<NodeGetCapabilitiesRequest>,
     ) -> Result<Response<NodeGetCapabilitiesResponse>, Status> {
         info!("[node] Processing get capabilities request: {:?}", request);
         let reply = NodeGetCapabilitiesResponse {
@@ -114,7 +114,7 @@ impl Node for App {
 
     async fn node_get_info(
         &self,
-        _: Request<NodeGetInfoRequest>,
+        request: Request<NodeGetInfoRequest>,
     ) -> Result<Response<NodeGetInfoResponse>, Status> {
         info!("[node] Processing get info request: {:?}", request);
         let reply = NodeGetInfoResponse {

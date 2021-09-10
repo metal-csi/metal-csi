@@ -15,7 +15,7 @@ use tonic::{Request, Response, Status};
 impl Controller for App {
     async fn controller_get_capabilities(
         &self,
-        _: Request<ControllerGetCapabilitiesRequest>,
+        request: Request<ControllerGetCapabilitiesRequest>,
     ) -> Result<Response<ControllerGetCapabilitiesResponse>, Status> {
         info!("[controller] Processing controller get capabilities request: {:?}", request);
         Ok(Response::new(ControllerGetCapabilitiesResponse {
@@ -123,7 +123,7 @@ impl Controller for App {
 
     async fn validate_volume_capabilities(
         &self,
-        _: Request<ValidateVolumeCapabilitiesRequest>,
+        request: Request<ValidateVolumeCapabilitiesRequest>,
     ) -> Result<Response<ValidateVolumeCapabilitiesResponse>, Status> {
         info!("[controller] Processing controller validate volume capabilities request: {:?}", request);
         Ok(Response::new(ValidateVolumeCapabilitiesResponse {
