@@ -17,6 +17,7 @@ impl Controller for App {
         &self,
         _: Request<ControllerGetCapabilitiesRequest>,
     ) -> Result<Response<ControllerGetCapabilitiesResponse>, Status> {
+        info!("[controller] Processing controller get capabilities request: {:?}", request);
         Ok(Response::new(ControllerGetCapabilitiesResponse {
             capabilities: vec![
                 ControllerServiceCapability {
@@ -37,6 +38,7 @@ impl Controller for App {
         &self,
         request: Request<CreateVolumeRequest>,
     ) -> Result<Response<CreateVolumeResponse>, Status> {
+        info!("[controller] Processing controller create volume request: {:?}", request);
         let name = request.get_ref().name.as_str();
         let capacity = &request.get_ref().capacity_range;
         let provision_size = if let Some(ref cap) = capacity {
@@ -70,7 +72,7 @@ impl Controller for App {
     ) -> Result<Response<DeleteVolumeResponse>, Status> {
         let volume_id = request.get_ref().volume_id.as_str();
         warn!(
-            "Received request to delete volume id '{}', ignored...",
+            "[controller] Received request to delete volume id '{}', ignored...",
             volume_id
         );
         Ok(Response::new(DeleteVolumeResponse {}))
@@ -80,6 +82,7 @@ impl Controller for App {
         &self,
         request: Request<ControllerPublishVolumeRequest>,
     ) -> Result<Response<ControllerPublishVolumeResponse>, Status> {
+        info!("[controller] Processing controller publish volume request: {:?}", request);
         let volume_id = request.get_ref().volume_id.as_str();
         // let readonly = request.get_ref().readonly; //TODO: Use this
         // let node_id = request.get_ref().node_id.as_str(); //TODO: Share to the specified node only
@@ -112,7 +115,7 @@ impl Controller for App {
     ) -> Result<Response<ControllerUnpublishVolumeResponse>, Status> {
         let volume_id = request.get_ref().volume_id.as_str();
         warn!(
-            "Received request to unpublish volume id '{}', ignored...",
+            "[controller] Received request to unpublish volume id '{}', ignored...",
             volume_id
         );
         Ok(Response::new(ControllerUnpublishVolumeResponse {}))
@@ -122,6 +125,7 @@ impl Controller for App {
         &self,
         _: Request<ValidateVolumeCapabilitiesRequest>,
     ) -> Result<Response<ValidateVolumeCapabilitiesResponse>, Status> {
+        info!("[controller] Processing controller validate volume capabilities request: {:?}", request);
         Ok(Response::new(ValidateVolumeCapabilitiesResponse {
             confirmed: Some(Confirmed {
                 volume_context: Default::default(),
@@ -137,7 +141,7 @@ impl Controller for App {
         request: Request<ListVolumesRequest>,
     ) -> Result<Response<ListVolumesResponse>, Status> {
         //TODO: List volumes?
-        warn!("Unhandled ListVolumesRequest: {:?}", request);
+        warn!("[controller] Unhandled ListVolumesRequest: {:?}", request);
         // ListVolumesRequest {
         //     max_entries: (),
         //     starting_token: (),
@@ -154,7 +158,7 @@ impl Controller for App {
         request: Request<GetCapacityRequest>,
     ) -> Result<Response<GetCapacityResponse>, Status> {
         //TODO: Return capacity?
-        warn!("Unhandled GetCapacityRequest: {:?}", request);
+        warn!("[controller] Unhandled GetCapacityRequest: {:?}", request);
         // GetCapacityRequest {
         //     volume_capabilities: (),
         //     parameters: (),
@@ -170,7 +174,7 @@ impl Controller for App {
         &self,
         request: Request<CreateSnapshotRequest>,
     ) -> Result<Response<CreateSnapshotResponse>, Status> {
-        warn!("Unhandled CreateSnapshotResponse: {:?}", request);
+        warn!("[controller] Unhandled CreateSnapshotResponse: {:?}", request);
         Err(Status::unimplemented("Snapshots not supported!"))
     }
 
@@ -178,7 +182,7 @@ impl Controller for App {
         &self,
         request: Request<DeleteSnapshotRequest>,
     ) -> Result<Response<DeleteSnapshotResponse>, Status> {
-        warn!("Unhandled DeleteSnapshotResponse: {:?}", request);
+        warn!("[controller] Unhandled DeleteSnapshotResponse: {:?}", request);
         Err(Status::unimplemented("Snapshots not supported!"))
     }
 
@@ -186,7 +190,7 @@ impl Controller for App {
         &self,
         request: Request<ListSnapshotsRequest>,
     ) -> Result<Response<ListSnapshotsResponse>, Status> {
-        warn!("Unhandled ListSnapshotsResponse: {:?}", request);
+        warn!("[controller] Unhandled ListSnapshotsResponse: {:?}", request);
         Err(Status::unimplemented("Snapshots not supported!"))
     }
 
@@ -194,7 +198,7 @@ impl Controller for App {
         &self,
         request: Request<ControllerExpandVolumeRequest>,
     ) -> Result<Response<ControllerExpandVolumeResponse>, Status> {
-        warn!("Unhandled ControllerExpandVolumeResponse: {:?}", request);
+        warn!("[controller] Unhandled ControllerExpandVolumeResponse: {:?}", request);
         Err(Status::unimplemented("Expand volume not supported!"))
     }
 
@@ -203,7 +207,7 @@ impl Controller for App {
         request: Request<ControllerGetVolumeRequest>,
     ) -> Result<Response<ControllerGetVolumeResponse>, Status> {
         //TODO: Retrieve volume detail
-        warn!("Unhandled ControllerGetVolumeRequest: {:?}", request);
+        warn!("[controller] Unhandled ControllerGetVolumeRequest: {:?}", request);
         // ControllerGetVolumeRequest { volume_id: () };
         // ControllerGetVolumeResponse {
         //     volume: (),

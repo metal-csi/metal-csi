@@ -12,7 +12,7 @@ impl Identity for App {
         &self,
         _: Request<GetPluginInfoRequest>,
     ) -> Result<Response<GetPluginInfoResponse>, Status> {
-        info!("Plugin info requested");
+        info!("[identity] Plugin info requested");
         let reply = GetPluginInfoResponse {
             name: self.config.driver.name.to_string(),
             vendor_version: "0.1".into(),
@@ -25,7 +25,7 @@ impl Identity for App {
         &self,
         _: Request<GetPluginCapabilitiesRequest>,
     ) -> Result<Response<GetPluginCapabilitiesResponse>, Status> {
-        info!("Plugin capabilties requested");
+        info!("[identity] Plugin capabilities requested");
         let reply = GetPluginCapabilitiesResponse {
             capabilities: vec![PluginCapability {
                 r#type: Some(plugin_capability::Type::Service(
@@ -39,7 +39,7 @@ impl Identity for App {
     }
 
     async fn probe(&self, _: Request<ProbeRequest>) -> Result<Response<ProbeResponse>, Status> {
-        info!("Received probe...");
+        info!("[identity] Received probe...");
         let reply = ProbeResponse { ready: Some(true) };
         Ok(Response::new(reply))
     }

@@ -17,6 +17,7 @@ impl Node for App {
         &self,
         request: Request<NodeStageVolumeRequest>,
     ) -> Result<Response<NodeStageVolumeResponse>, Status> {
+        info!("[node] Processing stage volume request: {:?}", request);
         let req = request.get_ref();
         let vol_id = req.volume_id.as_str();
 
@@ -55,6 +56,7 @@ impl Node for App {
         &self,
         request: Request<NodeUnstageVolumeRequest>,
     ) -> Result<Response<NodeUnstageVolumeResponse>, Status> {
+        info!("[node] Processing unstage volume request: {:?}", request);
         let req = request.get_ref();
         let vol_id = req.volume_id.as_str();
         let staging_path = req.staging_target_path.as_str();
@@ -71,6 +73,7 @@ impl Node for App {
         &self,
         request: Request<NodePublishVolumeRequest>,
     ) -> Result<Response<NodePublishVolumeResponse>, Status> {
+        info!("[node] Processing publish volume request: {:?}", request);
         let req = request.get_ref();
         let src = req.staging_target_path.as_str();
         let dst = req.target_path.as_str();
@@ -87,6 +90,7 @@ impl Node for App {
         &self,
         request: Request<NodeUnpublishVolumeRequest>,
     ) -> Result<Response<NodeUnpublishVolumeResponse>, Status> {
+        info!("[node] Processing unpublish volume request: {:?}", request);
         let req = request.get_ref();
         let dst = req.target_path.as_str();
         self.mounts().await?.umount(dst).await?;
@@ -97,7 +101,7 @@ impl Node for App {
         &self,
         _: Request<NodeGetCapabilitiesRequest>,
     ) -> Result<Response<NodeGetCapabilitiesResponse>, Status> {
-        info!("Received get capabilities request");
+        info!("[node] Processing get capabilities request: {:?}", request);
         let reply = NodeGetCapabilitiesResponse {
             capabilities: vec![NodeServiceCapability {
                 r#type: Some(node_service_capability::Type::Rpc(Rpc {
@@ -112,7 +116,7 @@ impl Node for App {
         &self,
         _: Request<NodeGetInfoRequest>,
     ) -> Result<Response<NodeGetInfoResponse>, Status> {
-        info!("Node information request received");
+        info!("[node] Processing get info request: {:?}", request);
         let reply = NodeGetInfoResponse {
             node_id: self.node_id.to_string(),
             max_volumes_per_node: 0,
@@ -125,7 +129,7 @@ impl Node for App {
         &self,
         request: Request<NodeGetVolumeStatsRequest>,
     ) -> Result<Response<NodeGetVolumeStatsResponse>, Status> {
-        warn!("Unhandled NodeGetVolumeStatsResponse: {:?}", request);
+        warn!("[node] Unhandled NodeGetVolumeStatsResponse: {:?}", request);
         Err(Status::unimplemented("Volume stats not supported!"))
     }
 
@@ -133,7 +137,7 @@ impl Node for App {
         &self,
         request: Request<NodeExpandVolumeRequest>,
     ) -> Result<Response<NodeExpandVolumeResponse>, Status> {
-        warn!("Unhandled NodeExpandVolumeResponse: {:?}", request);
+        warn!("[node] Unhandled NodeExpandVolumeResponse: {:?}", request);
         Err(Status::unimplemented("Expand volume not supported"))
     }
 }

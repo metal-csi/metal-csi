@@ -30,7 +30,7 @@ mod zfs;
 async fn main() -> Result<()> {
     let args = args::Args::new();
     let mut builder = flexi_logger::LogSpecification::builder();
-    builder.default(flexi_logger::LevelFilter::Debug).module(
+    builder.default(flexi_logger::LevelFilter::Info).module(
         "zed_csi",
         flexi_logger::LevelFilter::from_str(&args.log_level.as_str())?,
     );
