@@ -7,6 +7,7 @@ use super::{
     },
     App,
 };
+use crate::{control::ControlModule, zfs::ZFS};
 use anyhow::Result;
 use std::cmp::max;
 use tonic::{Request, Response, Status};
@@ -17,7 +18,11 @@ impl Controller for App {
         &self,
         request: Request<ControllerGetCapabilitiesRequest>,
     ) -> Result<Response<ControllerGetCapabilitiesResponse>, Status> {
-        info!("[controller] Processing controller get capabilities request: {:?}", request);
+        let message = request.get_ref();
+        info!(
+            "[controller] Processing controller get capabilities request: {:?}",
+            message
+        );
         Ok(Response::new(ControllerGetCapabilitiesResponse {
             capabilities: vec![
                 ControllerServiceCapability {
@@ -38,9 +43,14 @@ impl Controller for App {
         &self,
         request: Request<CreateVolumeRequest>,
     ) -> Result<Response<CreateVolumeResponse>, Status> {
-        info!("[controller] Processing controller create volume request: {:?}", request);
-        let name = request.get_ref().name.as_str();
-        let capacity = &request.get_ref().capacity_range;
+        let message = request.get_ref();
+        info!(
+            "[controller] Processing controller create volume request: {:?}",
+            message
+        );
+
+        let name = message.name.as_str();
+        let capacity = &message.capacity_range;
         let provision_size = if let Some(ref cap) = capacity {
             max(cap.limit_bytes, cap.required_bytes)
         } else {
@@ -48,7 +58,8 @@ impl Controller for App {
         };
 
         let dataset_name = format!("{}{}", self.config.zfs.parent_dataset, name);
-        let zfs = self.zfs().await?;
+        let control = ControlModule::from_map(&message.secrets)?;
+        let zfs: ZFS = control.get_zfs().await?;
         let dataset = zfs.get_dataset(dataset_name.as_str()).await?;
         if dataset.is_none() {
             zfs.create_dataset(dataset_name.as_str(), Some(provision_size))
@@ -70,7 +81,8 @@ impl Controller for App {
         &self,
         request: Request<DeleteVolumeRequest>,
     ) -> Result<Response<DeleteVolumeResponse>, Status> {
-        let volume_id = request.get_ref().volume_id.as_str();
+        let message = request.get_ref();
+        let volume_id = message.volume_id.as_str();
         warn!(
             "[controller] Received request to delete volume id '{}', ignored...",
             volume_id
@@ -82,12 +94,17 @@ impl Controller for App {
         &self,
         request: Request<ControllerPublishVolumeRequest>,
     ) -> Result<Response<ControllerPublishVolumeResponse>, Status> {
-        info!("[controller] Processing controller publish volume request: {:?}", request);
-        let volume_id = request.get_ref().volume_id.as_str();
-        // let readonly = request.get_ref().readonly; //TODO: Use this
-        // let node_id = request.get_ref().node_id.as_str(); //TODO: Share to the specified node only
+        let message = request.get_ref();
+        info!(
+            "[controller] Processing controller publish volume request: {:?}",
+            message
+        );
+        let volume_id = message.volume_id.as_str();
+        // let readonly = message.readonly; //TODO: Use this
+        // let node_id = message.node_id.as_str(); //TODO: Share to the specified node only
 
-        let mut iscsi = self.targetcli().await?;
+        let control = ControlModule::from_map(&message.secrets)?;
+        let mut iscsi = control.targetcli().await?;
         let backstore = iscsi.create_backstore(volume_id).await?;
 
         let iqn = iscsi
@@ -113,7 +130,8 @@ impl Controller for App {
         &self,
         request: Request<ControllerUnpublishVolumeRequest>,
     ) -> Result<Response<ControllerUnpublishVolumeResponse>, Status> {
-        let volume_id = request.get_ref().volume_id.as_str();
+        let message = request.get_ref();
+        let volume_id = message.volume_id.as_str();
         warn!(
             "[controller] Received request to unpublish volume id '{}', ignored...",
             volume_id
@@ -125,7 +143,11 @@ impl Controller for App {
         &self,
         request: Request<ValidateVolumeCapabilitiesRequest>,
     ) -> Result<Response<ValidateVolumeCapabilitiesResponse>, Status> {
-        info!("[controller] Processing controller validate volume capabilities request: {:?}", request);
+        let message = request.get_ref();
+        info!(
+            "[controller] Processing controller validate volume capabilities request: {:?}",
+            message
+        );
         Ok(Response::new(ValidateVolumeCapabilitiesResponse {
             confirmed: Some(Confirmed {
                 volume_context: Default::default(),
@@ -140,8 +162,9 @@ impl Controller for App {
         &self,
         request: Request<ListVolumesRequest>,
     ) -> Result<Response<ListVolumesResponse>, Status> {
+        let message = request.get_ref();
         //TODO: List volumes?
-        warn!("[controller] Unhandled ListVolumesRequest: {:?}", request);
+        warn!("[controller] Unhandled ListVolumesRequest: {:?}", message);
         // ListVolumesRequest {
         //     max_entries: (),
         //     starting_token: (),
@@ -157,8 +180,9 @@ impl Controller for App {
         &self,
         request: Request<GetCapacityRequest>,
     ) -> Result<Response<GetCapacityResponse>, Status> {
+        let message = request.get_ref();
         //TODO: Return capacity?
-        warn!("[controller] Unhandled GetCapacityRequest: {:?}", request);
+        warn!("[controller] Unhandled GetCapacityRequest: {:?}", message);
         // GetCapacityRequest {
         //     volume_capabilities: (),
         //     parameters: (),
@@ -174,7 +198,11 @@ impl Controller for App {
         &self,
         request: Request<CreateSnapshotRequest>,
     ) -> Result<Response<CreateSnapshotResponse>, Status> {
-        warn!("[controller] Unhandled CreateSnapshotResponse: {:?}", request);
+        let message = request.get_ref();
+        warn!(
+            "[controller] Unhandled CreateSnapshotResponse: {:?}",
+            message
+        );
         Err(Status::unimplemented("Snapshots not supported!"))
     }
 
@@ -182,7 +210,11 @@ impl Controller for App {
         &self,
         request: Request<DeleteSnapshotRequest>,
     ) -> Result<Response<DeleteSnapshotResponse>, Status> {
-        warn!("[controller] Unhandled DeleteSnapshotResponse: {:?}", request);
+        let message = request.get_ref();
+        warn!(
+            "[controller] Unhandled DeleteSnapshotResponse: {:?}",
+            message
+        );
         Err(Status::unimplemented("Snapshots not supported!"))
     }
 
@@ -190,7 +222,11 @@ impl Controller for App {
         &self,
         request: Request<ListSnapshotsRequest>,
     ) -> Result<Response<ListSnapshotsResponse>, Status> {
-        warn!("[controller] Unhandled ListSnapshotsResponse: {:?}", request);
+        let message = request.get_ref();
+        warn!(
+            "[controller] Unhandled ListSnapshotsResponse: {:?}",
+            message
+        );
         Err(Status::unimplemented("Snapshots not supported!"))
     }
 
@@ -198,7 +234,11 @@ impl Controller for App {
         &self,
         request: Request<ControllerExpandVolumeRequest>,
     ) -> Result<Response<ControllerExpandVolumeResponse>, Status> {
-        warn!("[controller] Unhandled ControllerExpandVolumeResponse: {:?}", request);
+        let message = request.get_ref();
+        warn!(
+            "[controller] Unhandled ControllerExpandVolumeResponse: {:?}",
+            message
+        );
         Err(Status::unimplemented("Expand volume not supported!"))
     }
 
@@ -206,8 +246,12 @@ impl Controller for App {
         &self,
         request: Request<ControllerGetVolumeRequest>,
     ) -> Result<Response<ControllerGetVolumeResponse>, Status> {
+        let message = request.get_ref();
         //TODO: Retrieve volume detail
-        warn!("[controller] Unhandled ControllerGetVolumeRequest: {:?}", request);
+        warn!(
+            "[controller] Unhandled ControllerGetVolumeRequest: {:?}",
+            message
+        );
         // ControllerGetVolumeRequest { volume_id: () };
         // ControllerGetVolumeResponse {
         //     volume: (),

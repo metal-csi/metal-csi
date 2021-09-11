@@ -1,5 +1,3 @@
-use crate::{error::AppError, util::FilesystemType};
-
 use super::{
     spec::{
         node_server::Node,
@@ -8,6 +6,7 @@ use super::{
     },
     App,
 };
+use crate::{error::AppError, util::FilesystemType};
 use anyhow::Result;
 use tonic::{Request, Response, Status};
 
@@ -17,11 +16,11 @@ impl Node for App {
         &self,
         request: Request<NodeStageVolumeRequest>,
     ) -> Result<Response<NodeStageVolumeResponse>, Status> {
-        info!("[node] Processing stage volume request: {:?}", request);
-        let req = request.get_ref();
-        let vol_id = req.volume_id.as_str();
+        let message = request.get_ref();
+        info!("[node] Processing stage volume request: {:?}", message);
+        let vol_id = message.volume_id.as_str();
 
-        let iscsiadm = self.iscsiadm().await?;
+        let iscsiadm = self.control_node().await?.iscsiadm().await?;
         let target_name = iscsiadm.get_target(&self.config.iscsi.base_iqn, vol_id);
         iscsiadm.discovery(&self.config.iscsi.target_portal).await?;
         iscsiadm
@@ -30,9 +29,9 @@ impl Node for App {
         let disk_path = iscsiadm
             .wait_for_disk(&target_name, &self.config.iscsi.target_portal)
             .await?;
-        let staging_path = req.staging_target_path.as_str();
+        let staging_path = message.staging_target_path.as_str();
 
-        let mounts = self.mounts().await?;
+        let mounts = self.control_node().await?.get_mount().await?;
         let block_device = mounts
             .get_block_device(&disk_path)
             .await?
@@ -56,12 +55,17 @@ impl Node for App {
         &self,
         request: Request<NodeUnstageVolumeRequest>,
     ) -> Result<Response<NodeUnstageVolumeResponse>, Status> {
-        info!("[node] Processing unstage volume request: {:?}", request);
-        let req = request.get_ref();
-        let vol_id = req.volume_id.as_str();
-        let staging_path = req.staging_target_path.as_str();
-        self.mounts().await?.umount(&staging_path).await?;
-        let iscsiadm = self.iscsiadm().await?;
+        let message = request.get_ref();
+        info!("[node] Processing unstage volume request: {:?}", message);
+        let vol_id = message.volume_id.as_str();
+        let staging_path = message.staging_target_path.as_str();
+        self.control_node()
+            .await?
+            .get_mount()
+            .await?
+            .umount(&staging_path)
+            .await?;
+        let iscsiadm = self.control_node().await?.iscsiadm().await?;
         let target_name = iscsiadm.get_target(&self.config.iscsi.base_iqn, vol_id);
         iscsiadm
             .logout(&target_name, &self.config.iscsi.target_portal)
@@ -73,12 +77,14 @@ impl Node for App {
         &self,
         request: Request<NodePublishVolumeRequest>,
     ) -> Result<Response<NodePublishVolumeResponse>, Status> {
-        info!("[node] Processing publish volume request: {:?}", request);
-        let req = request.get_ref();
-        let src = req.staging_target_path.as_str();
-        let dst = req.target_path.as_str();
+        let message = request.get_ref();
+        info!("[node] Processing publish volume request: {:?}", message);
+        let src = message.staging_target_path.as_str();
+        let dst = message.target_path.as_str();
 
-        self.mounts()
+        self.control_node()
+            .await?
+            .get_mount()
             .await?
             .mount(&FilesystemType::Bind, src, dst)
             .await?;
@@ -90,10 +96,15 @@ impl Node for App {
         &self,
         request: Request<NodeUnpublishVolumeRequest>,
     ) -> Result<Response<NodeUnpublishVolumeResponse>, Status> {
-        info!("[node] Processing unpublish volume request: {:?}", request);
-        let req = request.get_ref();
-        let dst = req.target_path.as_str();
-        self.mounts().await?.umount(dst).await?;
+        let message = request.get_ref();
+        info!("[node] Processing unpublish volume request: {:?}", message);
+        let dst = message.target_path.as_str();
+        self.control_node()
+            .await?
+            .get_mount()
+            .await?
+            .umount(dst)
+            .await?;
         Ok(Response::new(NodeUnpublishVolumeResponse {}))
     }
 
@@ -101,7 +112,8 @@ impl Node for App {
         &self,
         request: Request<NodeGetCapabilitiesRequest>,
     ) -> Result<Response<NodeGetCapabilitiesResponse>, Status> {
-        info!("[node] Processing get capabilities request: {:?}", request);
+        let message = request.get_ref();
+        info!("[node] Processing get capabilities request: {:?}", message);
         let reply = NodeGetCapabilitiesResponse {
             capabilities: vec![NodeServiceCapability {
                 r#type: Some(node_service_capability::Type::Rpc(Rpc {
@@ -116,7 +128,8 @@ impl Node for App {
         &self,
         request: Request<NodeGetInfoRequest>,
     ) -> Result<Response<NodeGetInfoResponse>, Status> {
-        info!("[node] Processing get info request: {:?}", request);
+        let message = request.get_ref();
+        info!("[node] Processing get info request: {:?}", message);
         let reply = NodeGetInfoResponse {
             node_id: self.node_id.to_string(),
             max_volumes_per_node: 0,
@@ -129,7 +142,8 @@ impl Node for App {
         &self,
         request: Request<NodeGetVolumeStatsRequest>,
     ) -> Result<Response<NodeGetVolumeStatsResponse>, Status> {
-        warn!("[node] Unhandled NodeGetVolumeStatsResponse: {:?}", request);
+        let message = request.get_ref();
+        warn!("[node] Unhandled NodeGetVolumeStatsRequest: {:?}", message);
         Err(Status::unimplemented("Volume stats not supported!"))
     }
 
@@ -137,7 +151,8 @@ impl Node for App {
         &self,
         request: Request<NodeExpandVolumeRequest>,
     ) -> Result<Response<NodeExpandVolumeResponse>, Status> {
-        warn!("[node] Unhandled NodeExpandVolumeResponse: {:?}", request);
+        let message = request.get_ref();
+        warn!("[node] Unhandled NodeExpandVolumeRequest: {:?}", message);
         Err(Status::unimplemented("Expand volume not supported"))
     }
 }

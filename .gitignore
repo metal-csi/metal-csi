@@ -4,3 +4,4 @@
 dev.yml
 .tmp
 /out
+secret.params

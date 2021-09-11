@@ -14,7 +14,7 @@ impl Identity for App {
     ) -> Result<Response<GetPluginInfoResponse>, Status> {
         info!("[identity] Plugin info requested");
         let reply = GetPluginInfoResponse {
-            name: self.config.driver.name.to_string(),
+            name: self.csi_name.to_string(),
             vendor_version: "0.1".into(),
             manifest: HashMap::default(),
         };

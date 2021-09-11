@@ -18,8 +18,12 @@ pub struct Args {
     pub csi_path: PathBuf,
 
     #[structopt(long("node-id"))]
-    /// Configuration file path
+    /// The name of the node this instance is running on
     pub node_id: String,
+
+    #[structopt(long("csi-name"))]
+    /// The name of the CSI Driver
+    pub csi_name: String,
 }
 
 impl Args {

@@ -9,13 +9,13 @@ pub use targetcli::*;
 mod iscsiadm;
 mod targetcli;
 
-impl App {
+impl ControlModule {
     pub async fn targetcli(&self) -> Result<TargetCLI> {
-        let cmd: ControlModule = self.control_controller().await?;
-        let targetcli = cmd.exec_open("targetcli").await?;
+        // let cmd: ControlModule = self.control_controller().await?;
+        self.connect().await?;
+        let targetcli = self.exec_open("targetcli").await?;
         let mut result = TargetCLI {
-            app: self.clone(),
-            cmd,
+            cmd: self.clone(),
             targetcli,
         };
         result.wait_for_prompt().await?;
@@ -23,7 +23,7 @@ impl App {
     }
 
     pub async fn iscsiadm(&self) -> Result<Iscsiadm> {
-        let result = self.control_node().await?;
-        Ok(result)
+        self.connect().await?;
+        Ok(self.clone().into())
     }
 }

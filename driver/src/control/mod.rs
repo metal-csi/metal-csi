@@ -1,17 +1,21 @@
 use crate::config::ControlMode;
 use crate::control::local::LocalShell;
 use crate::error::AppError;
+use crate::util::Mount;
+use crate::zfs::ZFS;
 use crate::Result;
 use async_trait::async_trait;
 use regex::Regex;
 use ssh::*;
+use std::collections::HashMap;
 use std::fmt::Debug;
+use std::sync::Arc;
 
 mod local;
 mod ssh;
 
-#[derive(Debug, Deref, DerefMut)]
-pub struct ControlModule(Box<dyn ControlModuleTrait>);
+#[derive(Debug, Clone, Deref, DerefMut)]
+pub struct ControlModule(Arc<Box<dyn ControlModuleTrait>>);
 
 impl Drop for ControlModule {
     fn drop(&mut self) {
@@ -60,28 +64,73 @@ pub trait ControlStreamTrait: Send + Sync + Debug {
 }
 
 impl ControlModule {
+    pub async fn get_zfs(&self) -> Result<ZFS> {
+        self.connect().await?;
+        Ok(self.clone().into())
+    }
+
+    pub async fn get_mount(&self) -> Result<Mount> {
+        self.connect().await?;
+        Ok(self.clone().into())
+    }
+
     pub fn new(config: &ControlMode) -> Result<ControlModule> {
         match config {
-            ControlMode::Local { sudo } => Ok(ControlModule(Box::new(LocalShell {
+            ControlMode::Local { sudo } => Ok(ControlModule(Arc::new(Box::new(LocalShell {
                 sudo: *sudo,
                 chroot: None,
-            }))),
-            ControlMode::Chroot { sudo, path } => Ok(ControlModule(Box::new(LocalShell {
-                sudo: *sudo,
-                chroot: Some(path.to_string()),
-            }))),
+            })))),
+            ControlMode::Chroot { sudo, path } => {
+                Ok(ControlModule(Arc::new(Box::new(LocalShell {
+                    sudo: *sudo,
+                    chroot: Some(path.to_string()),
+                }))))
+            }
             ControlMode::SSH {
                 sudo,
                 user,
                 private_key,
                 host,
                 port,
-            } => Ok(ControlModule(Box::new(SSHClient::new(
+            } => Ok(ControlModule(Arc::new(Box::new(SSHClient::new(
                 user.as_str(),
                 format!("{}:{}", host, port),
                 private_key.to_string(),
                 *sudo,
-            )?))),
+            )?)))),
+        }
+    }
+
+    pub fn from_map(map: &HashMap<String, String>) -> Result<ControlModule> {
+        match map.get("type").map(|v| v.as_str()) {
+            Some("ssh") => {
+                let user = map
+                    .get("sshUser")
+                    .ok_or_else(|| anyhow::anyhow!("sshUser key not found!"))?;
+                let host = map
+                    .get("sshHost")
+                    .ok_or_else(|| anyhow::anyhow!("sshHost key not found!"))?;
+                let port = map
+                    .get("sshPort")
+                    .ok_or_else(|| anyhow::anyhow!("sshPort key not found!"))?;
+                let private_key = map
+                    .get("sshKey")
+                    .ok_or_else(|| anyhow::anyhow!("sshKey key not found!"))?
+                    .replace("\\n", "\n");
+                let sudo = map
+                    .get("sudo")
+                    .ok_or_else(|| anyhow::anyhow!("sudo key not found!"))?
+                    .parse()?;
+                Ok(ControlModule(Arc::new(Box::new(SSHClient::new(
+                    user.as_str(),
+                    format!("{}:{}", host, port),
+                    private_key.to_string(),
+                    sudo,
+                )?))))
+            }
+            _ => Err(AppError::Generic(format!(
+                "Unknown configuration type for control mode map!"
+            ))),
         }
     }
 }

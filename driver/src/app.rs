@@ -2,7 +2,6 @@ use crate::args::Args;
 use crate::config::Configuration;
 use crate::control::ControlModule;
 use crate::error::Result;
-use crate::zfs::ZFS;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::{signal, sync::watch, time};
@@ -15,40 +14,29 @@ pub struct InnerApp {
     pub node_id: String,
     pub config: Configuration,
     pub csi_path: PathBuf,
+    pub csi_name: String,
     pub shutdown_tx: watch::Sender<bool>,
     pub shutdown_rx: watch::Receiver<bool>,
 }
 
 impl App {
-    pub async fn zfs(&self) -> Result<ZFS> {
-        Ok(self.control_controller().await?)
-    }
-
-    pub async fn mounts(&self) -> Result<crate::util::Mount> {
-        Ok(self.control_node().await?)
-    }
-
     pub fn new(args: Args) -> Result<Self> {
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
         let node_id = args.node_id.clone();
         let csi_path = args.csi_path.clone();
+        let csi_name = args.csi_name.clone();
         let config = Configuration::new(args)?;
         Ok(Self(Arc::new(InnerApp {
             node_id,
             config,
             csi_path,
+            csi_name,
             shutdown_tx,
             shutdown_rx,
         })))
     }
 
-    pub async fn control_controller<T: From<ControlModule>>(&self) -> Result<T> {
-        let cm = ControlModule::new(&self.config.controller.control_mode)?;
-        cm.connect().await?;
-        Ok(cm.into())
-    }
-
-    pub async fn control_node<T: From<ControlModule>>(&self) -> Result<T> {
+    pub async fn control_node(&self) -> Result<ControlModule> {
         let cm = ControlModule::new(&self.config.node.control_mode)?;
         cm.connect().await?;
         Ok(cm.into())

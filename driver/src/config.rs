@@ -12,10 +12,8 @@ pub struct Configuration(Arc<InnerConfiguration>);
 #[serde(default, rename_all = "snake_case")]
 pub struct InnerConfiguration {
     pub iscsi: ISCSIOptions,
-    pub driver: DriverOptions,
     pub zfs: ZFSOptions,
     pub node: NodeOptions,
-    pub controller: ControllerOptions,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -31,16 +29,6 @@ pub struct ISCSIOptions {
 pub struct ZFSOptions {
     pub parent_dataset: String,
     pub attributes: HashMap<String, String>,
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(default, rename_all = "snake_case")]
-pub struct DriverOptions {
-    pub name: String,
-    pub default_class: bool,
-    pub storage_class: String,
-    pub reclaim_policy: ReclaimPolicy,
-    pub socket_path: String,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -61,12 +49,6 @@ impl Default for InitiatorIQNMode {
     fn default() -> Self {
         InitiatorIQNMode::Detect {}
     }
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-#[serde(default, rename_all = "snake_case")]
-pub struct ControllerOptions {
-    pub control_mode: ControlMode,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

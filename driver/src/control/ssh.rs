@@ -66,6 +66,9 @@ impl SSHClient {
 #[async_trait]
 impl ControlModuleTrait for SSHClient {
     async fn connect(&self) -> Result<()> {
+        if self.is_connected().await? {
+            return Ok(());
+        }
         let config = thrussh::client::Config::default();
         let config = Arc::new(config);
 
