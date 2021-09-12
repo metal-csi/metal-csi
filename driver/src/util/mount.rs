@@ -134,13 +134,38 @@ pub struct BlockDeviceContainer {
 #[serde(default)]
 pub struct BlockDevice {
     pub name: String,
-    pub rm: bool,
+    pub rm: Bool,
     pub r#type: String,
     pub size: String,
     pub fstype: Option<String>,
-    pub ro: bool,
+    pub ro: Bool,
 }
 
 impl BlockDevice {
     const COLUMNS: &'static str = "name,rm,type,size,fstype,ro";
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Bool {
+    Bool(bool),
+    String(String),
+}
+
+impl Default for Bool {
+    fn default() -> Self {
+        Self::Bool(false)
+    }
+}
+
+impl Bool {
+    pub fn val(&self) -> bool {
+        match self {
+            Self::Bool(v) => *v,
+            Self::String(s) => match s.as_str() {
+                "1" | "true" | "True" | "TRUE" => true,
+                _ => false,
+            },
+        }
+    }
 }

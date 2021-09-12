@@ -20,7 +20,8 @@ impl Node for App {
         info!("[node] Processing stage volume request: {:?}", message);
         let vol_id = message.volume_id.as_str();
 
-        let iscsiadm = self.control_node().await?.get_iscsiadm().await?;
+        let control = self.control_node().await?;
+        let iscsiadm = control.get_iscsiadm().await?;
         let target_name = iscsiadm.get_target(&self.config.iscsi.base_iqn, vol_id);
         iscsiadm.discovery(&self.config.iscsi.target_portal).await?;
         iscsiadm
@@ -31,7 +32,7 @@ impl Node for App {
             .await?;
         let staging_path = message.staging_target_path.as_str();
 
-        let mounts = self.control_node().await?.get_mount().await?;
+        let mounts = control.get_mount().await?;
         let block_device = mounts
             .get_block_device(&disk_path)
             .await?
