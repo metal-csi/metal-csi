@@ -104,22 +104,22 @@ impl Controller for App {
         // let node_id = message.node_id.as_str(); //TODO: Share to the specified node only
 
         let control = ControlModule::from_map(&message.secrets)?;
-        let mut iscsi = control.targetcli().await?;
-        let backstore = iscsi.create_backstore(volume_id).await?;
+        let mut targetcli = control.get_targetcli().await?;
+        let backstore = targetcli.create_backstore(volume_id).await?;
 
-        let iqn = iscsi
+        let iqn = targetcli
             .create_target(&self.config.iscsi.base_iqn, volume_id)
             .await?;
 
-        iscsi.set_target_backstore(&iqn, &backstore).await?;
+        targetcli.set_target_backstore(&iqn, &backstore).await?;
 
         for (key, val) in self.config.iscsi.attributes.iter() {
-            iscsi
+            targetcli
                 .set_attribute(&iqn, key.as_str(), val.as_str())
                 .await?;
         }
 
-        iscsi.close().await?;
+        targetcli.close().await?;
 
         Ok(Response::new(ControllerPublishVolumeResponse {
             publish_context: Default::default(),

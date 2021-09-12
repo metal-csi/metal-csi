@@ -10,8 +10,7 @@ mod iscsiadm;
 mod targetcli;
 
 impl ControlModule {
-    pub async fn targetcli(&self) -> Result<TargetCLI> {
-        // let cmd: ControlModule = self.control_controller().await?;
+    pub async fn get_targetcli(&self) -> Result<TargetCLI> {
         self.connect().await?;
         let targetcli = self.exec_open("targetcli").await?;
         let mut result = TargetCLI {
@@ -22,7 +21,7 @@ impl ControlModule {
         Ok(result)
     }
 
-    pub async fn iscsiadm(&self) -> Result<Iscsiadm> {
+    pub async fn get_iscsiadm(&self) -> Result<Iscsiadm> {
         self.connect().await?;
         Ok(self.clone().into())
     }

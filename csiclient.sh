@@ -63,7 +63,7 @@ node-unstage)
     ;;
 
 node-publish)
-    csc node publish "${TEST_ZFS_PARENT}${TEST_VOL_NAME}" --target-path "${TEST_TARGET_PATH}"
+    csc node publish "${TEST_ZFS_PARENT}${TEST_VOL_NAME}" --staging-target-path "${TEST_BIND_PATH}" --target-path "${TEST_TARGET_PATH}"
     ;;
 
 node-unpublish)

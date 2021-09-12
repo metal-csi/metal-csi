@@ -20,7 +20,7 @@ impl Node for App {
         info!("[node] Processing stage volume request: {:?}", message);
         let vol_id = message.volume_id.as_str();
 
-        let iscsiadm = self.control_node().await?.iscsiadm().await?;
+        let iscsiadm = self.control_node().await?.get_iscsiadm().await?;
         let target_name = iscsiadm.get_target(&self.config.iscsi.base_iqn, vol_id);
         iscsiadm.discovery(&self.config.iscsi.target_portal).await?;
         iscsiadm
@@ -59,13 +59,9 @@ impl Node for App {
         info!("[node] Processing unstage volume request: {:?}", message);
         let vol_id = message.volume_id.as_str();
         let staging_path = message.staging_target_path.as_str();
-        self.control_node()
-            .await?
-            .get_mount()
-            .await?
-            .umount(&staging_path)
-            .await?;
-        let iscsiadm = self.control_node().await?.iscsiadm().await?;
+        let control = self.control_node().await?;
+        control.get_mount().await?.umount(&staging_path).await?;
+        let iscsiadm = control.get_iscsiadm().await?;
         let target_name = iscsiadm.get_target(&self.config.iscsi.base_iqn, vol_id);
         iscsiadm
             .logout(&target_name, &self.config.iscsi.target_portal)

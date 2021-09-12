@@ -2,7 +2,7 @@ pub type Result<T> = std::result::Result<T, AppError>;
 
 #[derive(Debug, Display)]
 pub enum AppError {
-    #[display(fmt = "Command failed with code {}\n> {}", code, output)]
+    #[display(fmt = "Command failed with code {}{}", code, output)]
     CommandFailed {
         code: u32,
         output: String,
@@ -19,6 +19,7 @@ impl<T: Into<anyhow::Error>> From<T> for AppError {
 
 impl From<AppError> for tonic::Status {
     fn from(e: AppError) -> Self {
+        warn!("{}", e);
         tonic::Status::aborted(e.to_string())
     }
 }

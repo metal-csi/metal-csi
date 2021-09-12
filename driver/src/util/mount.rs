@@ -23,15 +23,29 @@ impl Mount {
         cmd.write_fmt(format_args!("'{}' '{}'", device, path))?;
 
         debug!("Running mount command: {}", cmd);
-        self.exec_checked(&cmd).await?;
-        Ok(())
+        let (output, code) = self.exec(&cmd).await?;
+        if code == 0 {
+            return Ok(());
+        } else if code == 32 {
+            if output.contains("already mounted") {
+                return Ok(());
+            }
+        }
+        Err(AppError::CommandFailed { code, output })
     }
 
     pub async fn umount(&self, path: &str) -> Result<()> {
         info!("Unmounting {}", path);
         let cmd = format!("umount '{}'", path);
-        self.exec_checked(&cmd).await?;
-        Ok(())
+        let (output, code) = self.exec(&cmd).await?;
+        if code == 0 {
+            return Ok(());
+        } else if code == 32 {
+            if output.contains("not mounted") {
+                return Ok(());
+            }
+        }
+        Err(AppError::CommandFailed { code, output })
     }
 
     pub async fn get_mount(&self, path: &str) -> Result<Option<MountDetail>> {
