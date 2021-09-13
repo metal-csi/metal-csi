@@ -6,7 +6,7 @@ use super::{
     },
     App,
 };
-use crate::{error::AppError, util::FilesystemType};
+use crate::storage::Storage;
 use anyhow::Result;
 use tonic::{Request, Response, Status};
 
@@ -18,36 +18,17 @@ impl Node for App {
     ) -> Result<Response<NodeStageVolumeResponse>, Status> {
         let message = request.get_ref();
         info!("[node] Processing stage volume request: {:?}", message);
+
         let vol_id = message.volume_id.as_str();
-
-        let control = self.control_node().await?;
-        let iscsiadm = control.get_iscsiadm().await?;
-        let target_name = iscsiadm.get_target(&self.config.iscsi.base_iqn, vol_id);
-        iscsiadm.discovery(&self.config.iscsi.target_portal).await?;
-        iscsiadm
-            .login(&target_name, &self.config.iscsi.target_portal)
-            .await?;
-        let disk_path = iscsiadm
-            .wait_for_disk(&target_name, &self.config.iscsi.target_portal)
-            .await?;
         let staging_path = message.staging_target_path.as_str();
-
-        let mounts = control.get_mount().await?;
-        let block_device = mounts
-            .get_block_device(&disk_path)
-            .await?
-            .ok_or_else(|| AppError::Generic("Could not get block device detail!".into()))?;
-
-        if let Some(fs) = block_device.fstype {
-            info!("Found filesystem {} on {}", fs, &disk_path);
-        } else {
-            info!("Creating new filesystem on device {}", &disk_path);
-            mounts.mkfs(&disk_path, &FilesystemType::Ext4).await?;
-        }
-
-        mounts
-            .mount(&FilesystemType::Ext4, &disk_path, staging_path)
-            .await?;
+        let storage = Storage::new_from_params(
+            &message.volume_context,
+            self.control_node().await?,
+            vol_id,
+            &self.metadata,
+        )
+        .await?;
+        storage.stage(vol_id, staging_path).await?;
 
         Ok(Response::new(NodeStageVolumeResponse {}))
     }
@@ -58,14 +39,17 @@ impl Node for App {
     ) -> Result<Response<NodeUnstageVolumeResponse>, Status> {
         let message = request.get_ref();
         info!("[node] Processing unstage volume request: {:?}", message);
-        let vol_id = message.volume_id.as_str();
-        let staging_path = message.staging_target_path.as_str();
-        let control = self.control_node().await?;
-        control.get_mount().await?.umount(&staging_path).await?;
-        let iscsiadm = control.get_iscsiadm().await?;
-        let target_name = iscsiadm.get_target(&self.config.iscsi.base_iqn, vol_id);
-        iscsiadm
-            .logout(&target_name, &self.config.iscsi.target_portal)
+        let storage = Storage::new_from_volume_id(
+            message.volume_id.as_str(),
+            self.control_node().await?,
+            &self.metadata,
+        )
+        .await?;
+        storage
+            .unstage(
+                message.volume_id.as_str(),
+                message.staging_target_path.as_str(),
+            )
             .await?;
         Ok(Response::new(NodeUnstageVolumeResponse {}))
     }
@@ -76,16 +60,17 @@ impl Node for App {
     ) -> Result<Response<NodePublishVolumeResponse>, Status> {
         let message = request.get_ref();
         info!("[node] Processing publish volume request: {:?}", message);
+        let vol_id = message.volume_id.as_str();
         let src = message.staging_target_path.as_str();
         let dst = message.target_path.as_str();
-
-        self.control_node()
-            .await?
-            .get_mount()
-            .await?
-            .mount(&FilesystemType::Bind, src, dst)
-            .await?;
-
+        let storage = Storage::new_from_params(
+            &message.volume_context,
+            self.control_node().await?,
+            vol_id,
+            &self.metadata,
+        )
+        .await?;
+        storage.mount(vol_id, src, dst).await?;
         Ok(Response::new(NodePublishVolumeResponse {}))
     }
 
@@ -95,12 +80,14 @@ impl Node for App {
     ) -> Result<Response<NodeUnpublishVolumeResponse>, Status> {
         let message = request.get_ref();
         info!("[node] Processing unpublish volume request: {:?}", message);
-        let dst = message.target_path.as_str();
-        self.control_node()
-            .await?
-            .get_mount()
-            .await?
-            .umount(dst)
+        let storage = Storage::new_from_volume_id(
+            message.volume_id.as_str(),
+            self.control_node().await?,
+            &self.metadata,
+        )
+        .await?;
+        storage
+            .unmount(message.volume_id.as_str(), message.target_path.as_str())
             .await?;
         Ok(Response::new(NodeUnpublishVolumeResponse {}))
     }

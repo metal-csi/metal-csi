@@ -2,12 +2,15 @@
 set -Eeuo pipefail
 
 TEST_CMD="$1"
-TEST_VOL_NAME="csiclient"
+TEST_VOL_NAME="csi/csiclient"
 TEST_VOL_PVC_NAME="pvc-12341234123412341234"
 TEST_ZFS_PARENT="hoard/csitest/"
 TEST_BIND_PATH="/tmp/test-csitest-bind"
 TEST_TARGET_PATH="/tmp/test-csitest"
-TEST_STORAGECLASS_PARAMS="type=iscsi"
+TEST_STORAGECLASS_PARAMS="type=iscsi,baseIqn=iqn.2020-01.id.proctor:target:proctor-nas.proctor.id,\
+targetPortal=172.16.1.5,attr.authentication=0,attr.demo_mode_write_protect=0,attr.generate_node_acls=1,\
+csi.storage.k8s.io/pvc/namespace=csi,csi.storage.k8s.io/pvc/name=csiclient,\
+attr.cache_dynamic_acls=1,zfs.parentDataset=hoard/csitest/"
 TEST_STORAGECLASS_SECRETS="$(cat secret.params)"
 
 function csc() {
@@ -51,11 +54,11 @@ controller-create)
     ;;
 
 controller-delete)
-    csc controller delete-volume "${TEST_VOL_NAME}"
+    csc controller delete-volume "${TEST_ZFS_PARENT}${TEST_VOL_NAME}"
     ;;
 
 node-stage)
-    csc node stage "${TEST_ZFS_PARENT}${TEST_VOL_NAME}" --staging-target-path "${TEST_BIND_PATH}"
+    csc node stage "${TEST_ZFS_PARENT}${TEST_VOL_NAME}" --staging-target-path "${TEST_BIND_PATH}" --vol-context "${TEST_STORAGECLASS_PARAMS}"
     ;;
 
 node-unstage)
@@ -63,11 +66,22 @@ node-unstage)
     ;;
 
 node-publish)
-    csc node publish "${TEST_ZFS_PARENT}${TEST_VOL_NAME}" --staging-target-path "${TEST_BIND_PATH}" --target-path "${TEST_TARGET_PATH}"
+    csc node publish "${TEST_ZFS_PARENT}${TEST_VOL_NAME}" --staging-target-path "${TEST_BIND_PATH}" --target-path "${TEST_TARGET_PATH}" --vol-context "${TEST_STORAGECLASS_PARAMS}"
     ;;
 
 node-unpublish)
     csc node unpublish "${TEST_ZFS_PARENT}${TEST_VOL_NAME}" --target-path "${TEST_TARGET_PATH}"
+    ;;
+
+do-all)
+    ./csiclient.sh controller-create
+    ./csiclient.sh controller-publish
+    ./csiclient.sh node-stage
+    ./csiclient.sh node-publish
+    ./csiclient.sh node-unpublish
+    ./csiclient.sh node-unstage
+    ./csiclient.sh controller-unpublish
+    ./csiclient.sh controller-delete
     ;;
 
 *)

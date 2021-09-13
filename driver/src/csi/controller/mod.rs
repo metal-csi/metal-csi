@@ -7,10 +7,13 @@ use super::{
     },
     App,
 };
-use crate::{control::ControlModule, zfs::ZFS};
+use crate::{control::ControlModule, storage::Storage};
 use anyhow::Result;
 use std::cmp::max;
 use tonic::{Request, Response, Status};
+
+const CSI_NAME: &'static str = "csi.storage.k8s.io/pvc/name";
+const CSI_NAMESPACE: &'static str = "csi.storage.k8s.io/pvc/namespace";
 
 #[tonic::async_trait]
 impl Controller for App {
@@ -49,7 +52,15 @@ impl Controller for App {
             message
         );
 
-        let name = message.name.as_str();
+        let name = if let (Some(name), Some(namespace)) = (
+            message.parameters.get(CSI_NAME),
+            message.parameters.get(CSI_NAMESPACE),
+        ) {
+            format!("{}/{}", namespace, name)
+        } else {
+            message.name.to_string()
+        };
+
         let capacity = &message.capacity_range;
         let provision_size = if let Some(ref cap) = capacity {
             max(cap.limit_bytes, cap.required_bytes)
@@ -57,21 +68,16 @@ impl Controller for App {
             1 * 1024 * 1024 * 1024
         };
 
-        let dataset_name = format!("{}{}", self.config.zfs.parent_dataset, name);
-        let control = ControlModule::from_map(&message.secrets)?;
-        let zfs: ZFS = control.get_zfs().await?;
-        let dataset = zfs.get_dataset(dataset_name.as_str()).await?;
-        if dataset.is_none() {
-            zfs.create_dataset(dataset_name.as_str(), Some(provision_size))
-                .await?;
-        }
+        let storage =
+            Storage::new_from_params_secrets(&message.parameters, &message.secrets).await?;
+        let volume_id = storage.create(&name, provision_size).await?;
 
         Ok(Response::new(CreateVolumeResponse {
             volume: Some(Volume {
                 capacity_bytes: provision_size,
-                volume_id: dataset_name,
-                volume_context: Default::default(),
+                volume_id,
                 content_source: None,
+                volume_context: message.parameters.clone(),
                 accessible_topology: Default::default(),
             }),
         }))
@@ -87,6 +93,10 @@ impl Controller for App {
             "[controller] Received request to delete volume id '{}', ignored...",
             volume_id
         );
+
+        let control = ControlModule::from_map(&message.secrets)?;
+        let storage = Storage::new_from_volume_id(volume_id, control, &self.metadata).await?;
+        storage.delete(volume_id).await?;
         Ok(Response::new(DeleteVolumeResponse {}))
     }
 
@@ -103,23 +113,14 @@ impl Controller for App {
         // let readonly = message.readonly; //TODO: Use this
         // let node_id = message.node_id.as_str(); //TODO: Share to the specified node only
 
-        let control = ControlModule::from_map(&message.secrets)?;
-        let mut targetcli = control.get_targetcli().await?;
-        let backstore = targetcli.create_backstore(volume_id).await?;
-
-        let iqn = targetcli
-            .create_target(&self.config.iscsi.base_iqn, volume_id)
-            .await?;
-
-        targetcli.set_target_backstore(&iqn, &backstore).await?;
-
-        for (key, val) in self.config.iscsi.attributes.iter() {
-            targetcli
-                .set_attribute(&iqn, key.as_str(), val.as_str())
-                .await?;
-        }
-
-        targetcli.close().await?;
+        let storage = Storage::new_from_params_secrets_metadata(
+            &message.volume_context,
+            &message.secrets,
+            volume_id,
+            &self.metadata,
+        )
+        .await?;
+        storage.publish(volume_id).await?;
 
         Ok(Response::new(ControllerPublishVolumeResponse {
             publish_context: Default::default(),
@@ -133,9 +134,13 @@ impl Controller for App {
         let message = request.get_ref();
         let volume_id = message.volume_id.as_str();
         warn!(
-            "[controller] Received request to unpublish volume id '{}', ignored...",
+            "[controller] Received request to unpublish volume id '{}'",
             volume_id
         );
+
+        let control = ControlModule::from_map(&message.secrets)?;
+        let storage = Storage::new_from_volume_id(volume_id, control, &self.metadata).await?;
+        storage.unpublish(volume_id).await?;
         Ok(Response::new(ControllerUnpublishVolumeResponse {}))
     }
 

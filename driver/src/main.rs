@@ -22,7 +22,9 @@ mod control;
 mod csi;
 mod error;
 mod iscsi;
+mod metadata;
 mod sock;
+mod storage;
 mod util;
 mod zfs;
 

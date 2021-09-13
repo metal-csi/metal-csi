@@ -57,18 +57,33 @@ impl ZFS {
 
     pub async fn create_dataset<T: Into<String>>(&self, name: T, size: Option<i64>) -> Result<()> {
         let name = name.into();
+        debug!("Creating ZFS dataset with name '{}'", name);
         let vopt = if let Some(s) = size {
             format!("-V {}", s)
         } else {
             Default::default()
         };
+        if name.contains("/") {
+            let mut parts: Vec<&str> = name.split("/").collect();
+            let mut curpath = parts.remove(0).to_string();
+            while parts.len() > 1 {
+                let part = parts.remove(0);
+                curpath = format!("{}/{}", curpath, part);
+                debug!("Creating parent path '{}'", curpath);
+                self.exec(&format!("zfs create '{}'", curpath)).await?;
+            }
+        }
         let cmd = format!("zfs create {} '{}'", vopt, name);
         let (output, code) = self.exec(&cmd).await?;
         if code != 0 {
-            return Err(AppError::Generic(format!(
-                "Failed to create ZFS dataset, exit code {}\n{}",
-                code, output
-            )));
+            return Err(AppError::Generic(
+                format!(
+                    "Failed to create ZFS dataset, exit code {}\n{}",
+                    code, output
+                )
+                .trim()
+                .to_string(),
+            ));
         }
         Ok(())
     }

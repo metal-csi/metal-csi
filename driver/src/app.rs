@@ -1,7 +1,7 @@
-use crate::args::Args;
 use crate::config::Configuration;
 use crate::control::ControlModule;
 use crate::error::Result;
+use crate::{args::Args, metadata::Metadata};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::{signal, sync::watch, time};
@@ -17,6 +17,7 @@ pub struct InnerApp {
     pub csi_name: String,
     pub shutdown_tx: watch::Sender<bool>,
     pub shutdown_rx: watch::Receiver<bool>,
+    pub metadata: Metadata,
 }
 
 impl App {
@@ -25,6 +26,7 @@ impl App {
         let node_id = args.node_id.clone();
         let csi_path = args.csi_path.clone();
         let csi_name = args.csi_name.clone();
+        let metadata = Metadata::new(args.metadata_db.clone())?;
         let config = Configuration::new(args)?;
         Ok(Self(Arc::new(InnerApp {
             node_id,
@@ -33,6 +35,7 @@ impl App {
             csi_name,
             shutdown_tx,
             shutdown_rx,
+            metadata,
         })))
     }
 

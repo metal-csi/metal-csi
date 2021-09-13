@@ -13,15 +13,19 @@ pub struct Args {
     /// Configuration file path
     pub config_path: PathBuf,
 
-    #[structopt(long("csi-path"), default_value = "/plugin/csi.sock")]
+    #[structopt(long, default_value = "/plugin/csi.sock")]
     /// Configuration file path
     pub csi_path: PathBuf,
 
-    #[structopt(long("node-id"))]
+    #[structopt(long, default_value = "/plugin/metadata.db")]
+    /// Metadata file path, this file will be created if it does not already exist
+    pub metadata_db: PathBuf,
+
+    #[structopt(long)]
     /// The name of the node this instance is running on
     pub node_id: String,
 
-    #[structopt(long("csi-name"))]
+    #[structopt(long)]
     /// The name of the CSI Driver
     pub csi_name: String,
 }
