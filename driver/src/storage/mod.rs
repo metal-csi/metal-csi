@@ -1,9 +1,11 @@
 use crate::control::ControlModule;
 use crate::error::AppError;
+use crate::iscsi::ISCSIOptions;
 use crate::metadata::{Metadata, Storeable};
-use crate::storage::iscsi::{ISCSIModule, ISCSIOptions};
+use crate::zfs::ZFSOptions;
 use crate::Result;
 use async_trait::async_trait;
+use iscsi::ISCSIModule;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -13,7 +15,7 @@ mod iscsi;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum StorageInfo {
     ISCSI {
-        options: iscsi::ISCSIOptions,
+        options: ISCSIOptions,
         zfs: ZFSOptions,
     },
 }
@@ -147,29 +149,4 @@ pub trait StorageModule: Send + Sync + Debug {
 
     /// Node unpublish
     async fn unmount(&self, volume_id: &str, target_path: &str) -> Result<()>;
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ZFSOptions {
-    pub parent_dataset: String,
-    pub attributes: HashMap<String, String>,
-}
-
-impl ZFSOptions {
-    pub fn new(params: &HashMap<String, String>) -> Result<Self> {
-        let parent_dataset = params
-            .get("zfs.parentDataset")
-            .ok_or_else(|| AppError::Generic(format!("ZFS Parent Dataset is required!")))?
-            .to_string();
-        let mut attributes: HashMap<String, String> = Default::default();
-        for (k, v) in params.iter() {
-            if k.starts_with("zfs.attr.") {
-                attributes.insert(k.to_string().split_off(9), v.to_string());
-            }
-        }
-        Ok(ZFSOptions {
-            parent_dataset,
-            attributes,
-        })
-    }
 }

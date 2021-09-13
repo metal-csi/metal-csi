@@ -2,6 +2,33 @@ use super::*;
 use crate::{control::ControlModule, Result};
 use std::collections::HashMap;
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ZFSOptions {
+    pub parent_dataset: String,
+    pub attributes: HashMap<String, String>,
+}
+
+impl ZFSOptions {
+    const ATTR_PREFIX: &'static str = "zfs.attr.";
+
+    pub fn new(params: &HashMap<String, String>) -> Result<Self> {
+        let parent_dataset = params
+            .get("zfs.parentDataset")
+            .ok_or_else(|| AppError::Generic(format!("ZFS Parent Dataset is required!")))?
+            .to_string();
+        let mut attributes: HashMap<String, String> = Default::default();
+        for (k, v) in params.iter() {
+            if k.starts_with(Self::ATTR_PREFIX) {
+                attributes.insert(k.to_string().split_off(9), v.to_string());
+            }
+        }
+        Ok(ZFSOptions {
+            parent_dataset,
+            attributes,
+        })
+    }
+}
+
 #[derive(Debug, Deref, DerefMut, From)]
 pub struct ZFS(ControlModule);
 

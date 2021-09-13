@@ -95,8 +95,11 @@ impl Controller for App {
         );
 
         let control = ControlModule::from_map(&message.secrets)?;
-        let storage = Storage::new_from_volume_id(volume_id, control, &self.metadata).await?;
-        storage.delete(volume_id).await?;
+        match Storage::new_from_volume_id(volume_id, control, &self.metadata).await {
+            Ok(storage) => storage.delete(volume_id).await?,
+            Err(e) => warn!("Storage delete operation could not be called: {}", e),
+        }
+
         Ok(Response::new(DeleteVolumeResponse {}))
     }
 
@@ -139,8 +142,11 @@ impl Controller for App {
         );
 
         let control = ControlModule::from_map(&message.secrets)?;
-        let storage = Storage::new_from_volume_id(volume_id, control, &self.metadata).await?;
-        storage.unpublish(volume_id).await?;
+        match Storage::new_from_volume_id(volume_id, control, &self.metadata).await {
+            Ok(storage) => storage.unpublish(volume_id).await?,
+            Err(e) => warn!("Storage delete operation could not be called: {}", e),
+        }
+
         Ok(Response::new(ControllerUnpublishVolumeResponse {}))
     }
 
