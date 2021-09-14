@@ -37,7 +37,7 @@ impl FilesystemType {
     pub fn mount_options(&self) -> Option<&'static str> {
         match self {
             &FilesystemType::Bind => Some("bind"),
-            &FilesystemType::NFS => Some("minorversion=1"),
+            // &FilesystemType::NFS => Some("minorversion=1"),
             _ => None,
         }
     }
