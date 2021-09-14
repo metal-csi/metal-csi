@@ -12,10 +12,13 @@ impl ZFSOptions {
     const ATTR_PREFIX: &'static str = "zfs.attr.";
 
     pub fn new(params: &HashMap<String, String>) -> Result<Self> {
-        let parent_dataset = params
+        let mut parent_dataset = params
             .get("zfs.parentDataset")
             .ok_or_else(|| AppError::Generic(format!("ZFS Parent Dataset is required!")))?
             .to_string();
+        if !parent_dataset.ends_with("/") {
+            parent_dataset.push_str("/");
+        }
         let mut attributes: HashMap<String, String> = Default::default();
         for (k, v) in params.iter() {
             if k.starts_with(Self::ATTR_PREFIX) {
@@ -80,6 +83,22 @@ impl ZFS {
             );
         }
         Ok(Some(ZFSDataset { properties, name }))
+    }
+
+    pub async fn set_attributes(
+        &self,
+        dataset: &str,
+        attrs: &HashMap<String, String>,
+    ) -> Result<()> {
+        if attrs.len() > 0 {
+            let mut cmd = "zfs set ".to_string();
+            for (key, val) in attrs.iter() {
+                cmd.push_str(&format!("'{}={}' ", key, val));
+            }
+            cmd.push_str(dataset);
+            self.exec_checked(&cmd).await?;
+        }
+        Ok(())
     }
 
     pub async fn create_dataset<T: Into<String>>(&self, name: T, size: Option<i64>) -> Result<()> {

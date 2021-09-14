@@ -20,6 +20,8 @@ impl StorageModule for ISCSIModule {
             zfs.create_dataset(dataset_name.as_str(), Some(provision_size))
                 .await?;
         }
+        zfs.set_attributes(&dataset_name, &self.zfs.attributes)
+            .await?;
         Ok(dataset_name)
     }
 
@@ -77,7 +79,7 @@ impl StorageModule for ISCSIModule {
             info!("Found filesystem {} on {}", fs, &disk_path);
         } else {
             info!("Creating new filesystem on device {}", &disk_path);
-            mounts.mkfs(&disk_path, &FilesystemType::Ext4).await?;
+            mounts.mkfs(&disk_path, &self.options.fs_type).await?;
         }
 
         mounts

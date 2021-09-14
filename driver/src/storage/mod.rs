@@ -1,3 +1,5 @@
+use self::iscsi::ISCSIModule;
+use self::nfs::{NFSModule, NFSOptions};
 use crate::control::ControlModule;
 use crate::error::AppError;
 use crate::iscsi::ISCSIOptions;
@@ -5,17 +7,21 @@ use crate::metadata::{Metadata, Storeable};
 use crate::zfs::ZFSOptions;
 use crate::Result;
 use async_trait::async_trait;
-use iscsi::ISCSIModule;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 
 mod iscsi;
+mod nfs;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum StorageInfo {
     ISCSI {
         options: ISCSIOptions,
+        zfs: ZFSOptions,
+    },
+    NFS {
+        options: NFSOptions,
         zfs: ZFSOptions,
     },
 }
@@ -99,6 +105,11 @@ impl Storage {
                 let zfs = ZFSOptions::new(params)?;
                 Ok(StorageInfo::ISCSI { options, zfs })
             }
+            Some("nfs") => {
+                let options = NFSOptions::new(params)?;
+                let zfs = ZFSOptions::new(params)?;
+                Ok(StorageInfo::NFS { options, zfs })
+            }
             Some(s) => Err(AppError::Generic(format!(
                 "'{}' is an unknown storage type!",
                 s
@@ -116,6 +127,11 @@ impl Storage {
         control.connect().await?;
         match storage_info {
             StorageInfo::ISCSI { zfs, options } => Ok(Storage(Arc::new(Box::new(ISCSIModule {
+                options,
+                zfs,
+                control,
+            })))),
+            StorageInfo::NFS { zfs, options } => Ok(Storage(Arc::new(Box::new(NFSModule {
                 options,
                 zfs,
                 control,

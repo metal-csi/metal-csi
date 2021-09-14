@@ -26,7 +26,14 @@ impl App {
         let node_id = args.node_id.clone();
         let csi_path = args.csi_path.clone();
         let csi_name = args.csi_name.clone();
-        let metadata = Metadata::new(args.metadata_db.clone())?;
+        let metadata = match Metadata::new(args.metadata_db.clone()) {
+            Ok(m) => m,
+            Err(e) => {
+                warn!("Failed to load metadata db due to error {}, attempting to reload a new database", e);
+                std::fs::remove_dir_all(&args.metadata_db)?;
+                Metadata::new(args.metadata_db.clone())?
+            }
+        };
         let config = Configuration::new(args)?;
         Ok(Self(Arc::new(InnerApp {
             node_id,

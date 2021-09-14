@@ -1,5 +1,6 @@
 use super::*;
 use crate::control::{ControlModule, ControlStream};
+use crate::util::FilesystemType;
 use crate::Result;
 pub use iscsiadm::*;
 use regex::Regex;
@@ -14,6 +15,7 @@ pub struct ISCSIOptions {
     pub base_iqn: String,
     pub target_portal: String,
     pub attributes: HashMap<String, String>,
+    pub fs_type: FilesystemType,
 }
 
 impl ISCSIOptions {
@@ -28,6 +30,11 @@ impl ISCSIOptions {
             .ok_or_else(|| AppError::Generic(format!("Target Portal is required!")))?
             .to_string();
 
+        let fs_type = params
+            .get("fsType")
+            .map(|fs_str| FilesystemType::from(fs_str.as_str()))
+            .unwrap_or(FilesystemType::Ext4);
+
         let mut attributes: HashMap<String, String> = Default::default();
         for (k, v) in params.iter() {
             if k.starts_with("attr.") {
@@ -39,6 +46,7 @@ impl ISCSIOptions {
             base_iqn,
             target_portal,
             attributes,
+            fs_type,
         })
     }
 }

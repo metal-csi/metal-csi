@@ -1,4 +1,4 @@
-#[derive(Debug, Display)]
+#[derive(Debug, Display, Serialize, Deserialize, Clone)]
 pub enum FilesystemType {
     Ext2,
     Ext3,
@@ -18,7 +18,7 @@ impl FilesystemType {
             FilesystemType::Ext3 => Some("ext3"),
             FilesystemType::Ext4 => Some("ext4"),
             FilesystemType::XFS => Some("xfs"),
-            FilesystemType::NFS => Some("nfs"),
+            FilesystemType::NFS => Some("nfs4"),
             FilesystemType::TmpFs => Some("tmpfs"),
             _ => None,
         }
@@ -37,6 +37,7 @@ impl FilesystemType {
     pub fn mount_options(&self) -> Option<&'static str> {
         match self {
             &FilesystemType::Bind => Some("bind"),
+            &FilesystemType::NFS => Some("minorversion=1"),
             _ => None,
         }
     }

@@ -28,7 +28,11 @@ impl Metadata {
         let raw_val = self.db.get(fullkey.as_bytes())?;
         if let Some(val) = raw_val {
             let dat: Vec<u8> = Vec::from(val.as_ref());
-            Ok(Some(T::from_bytes(dat)?))
+            if let Ok(r) = T::from_bytes(dat) {
+                Ok(Some(r))
+            } else {
+                Ok(None)
+            }
         } else {
             Ok(None)
         }
