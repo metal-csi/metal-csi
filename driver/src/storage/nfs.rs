@@ -4,16 +4,25 @@ use crate::{control::ControlModule, util::FilesystemType, zfs::ZFSOptions};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NFSOptions {
     pub host: String,
+    pub export: String,
 }
 
 impl NFSOptions {
+    const EXPORT_DEFAULTS: &'static str = "wdelay,nohide,crossmnt,no_root_squash,no_subtree_check,mountpoint,sec=sys,rw,secure,no_root_squash,no_all_squash";
+    const LOCAL_CIDRS: &'static str = "@192.168.0.0/16:@172.16.0.0/12:@10.0.0.0/8";
+
     pub fn new(params: &HashMap<String, String>) -> Result<Self> {
         let host = params
             .get("host")
             .ok_or_else(|| AppError::Generic(format!("NFS Host is required!")))?
             .to_string();
 
-        Ok(NFSOptions { host })
+        let export = params
+            .get("export")
+            .map(|i| i.to_string())
+            .unwrap_or_else(|| format!("{},rw={},ro", Self::EXPORT_DEFAULTS, Self::LOCAL_CIDRS));
+
+        Ok(NFSOptions { host, export })
     }
 }
 
@@ -36,7 +45,7 @@ impl StorageModule for NFSModule {
             zfs.create_dataset(dataset_name.as_str(), None).await?;
         }
         let mut attrs = self.zfs.attributes.clone();
-        attrs.insert("sharenfs".into(), "on".into());
+        attrs.insert("sharenfs".into(), self.options.export.to_string());
         zfs.set_attributes(&dataset_name, &attrs).await?;
         Ok(dataset_name)
     }
@@ -68,10 +77,7 @@ impl StorageModule for NFSModule {
 
     async fn mount(&self, volume_id: &str, _: &str, target_path: &str) -> Result<()> {
         info!("Mounting {}", volume_id);
-        let nfs_path = format!(
-            "{}:/{}",
-            self.options.host, volume_id
-        );
+        let nfs_path = format!("{}:/{}", self.options.host, volume_id);
         self.control
             .get_mount()
             .await?
