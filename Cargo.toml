@@ -2,4 +2,4 @@
 members = ["driver"]
 
 [patch.crates-io]
-h2 = { git = "https://github.com/zed-csi/h2.git", branch = "patch/uds" }
+h2 = { git = "https://github.com/metal-csi/h2.git", branch = "patch/uds" }

@@ -571,7 +571,7 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 [[package]]
 name = "h2"
 version = "0.3.4"
-source = "git+https://github.com/zed-csi/h2.git?branch=patch/uds#24b9bed9fb33763b6727322dfe32fb033f148c2e"
+source = "git+https://github.com/metal-csi/h2.git?branch=patch/uds#24b9bed9fb33763b6727322dfe32fb033f148c2e"
 dependencies = [
  "bytes",
  "fnv",
@@ -791,6 +791,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59accc507f1338036a0477ef61afdae33cde60840f4dfe481319ce3ad116ddf9"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "metal-csi"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-stream",
+ "async-trait",
+ "bincode",
+ "clap",
+ "derive_more",
+ "flexi_logger",
+ "futures",
+ "lazy_static",
+ "log",
+ "openssl-sys",
+ "prost",
+ "prost-types",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sled",
+ "structopt",
+ "thrussh",
+ "thrussh-keys",
+ "tokio",
+ "tonic",
+ "tonic-build",
 ]
 
 [[package]]
@@ -1887,36 +1917,6 @@ checksum = "e262a29d0e61ccf2b6190d7050d4b237535fc76ce4c1210d9caa316f71dffa75"
 dependencies = [
  "bit-vec",
  "num-bigint",
-]
-
-[[package]]
-name = "zed-csi"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-stream",
- "async-trait",
- "bincode",
- "clap",
- "derive_more",
- "flexi_logger",
- "futures",
- "lazy_static",
- "log",
- "openssl-sys",
- "prost",
- "prost-types",
- "regex",
- "serde",
- "serde_json",
- "serde_yaml",
- "sled",
- "structopt",
- "thrussh",
- "thrussh-keys",
- "tokio",
- "tonic",
- "tonic-build",
 ]
 
 [[package]]

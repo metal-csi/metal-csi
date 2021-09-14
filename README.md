@@ -1,1 +1,1 @@
-# Zed CSI
+# Metal CSI

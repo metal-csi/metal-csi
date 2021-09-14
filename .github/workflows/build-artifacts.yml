@@ -1,9 +1,9 @@
-name: Build zed-csi artifacts
+name: Build metal-csi artifacts
 on: push
 
 jobs:
   build:
-    name: Build zed-csi
+    name: Build metal-csi
     runs-on: 'ubuntu-20.04'
 
     steps:
@@ -16,14 +16,14 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: zed-csi
-          path: ./out/zed-csi.*.lz
+          name: metal-csi
+          path: ./out/metal-csi.*.lz
 
       - name: Create release with assets
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: ./out/zed-csi.*.lz
+          files: ./out/metal-csi.*.lz
 
       - name: Create release with assets
         uses: softprops/action-gh-release@v1
@@ -48,5 +48,5 @@ jobs:
             --platform linux/amd64,linux/arm64 \
             -f dist.dockerfile \
             --build-arg "CSIVERSION=${GITHUB_REF#refs/tags/}" \
-            -t "ghcr.io/zed-csi/zed-csi:${GITHUB_REF#refs/tags/}" \
-            -t "ghcr.io/zed-csi/zed-csi:build-$(date '+%Y%m%d%H%M')" --push .
+            -t "ghcr.io/metal-csi/metal-csi:${GITHUB_REF#refs/tags/}" \
+            -t "ghcr.io/metal-csi/metal-csi:build-$(date '+%Y%m%d%H%M')" --push .
