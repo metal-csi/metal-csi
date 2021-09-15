@@ -1,4 +1,5 @@
 use super::*;
+use regex::Regex;
 
 lazy_static! {
     static ref TARGETCLI_PROMPT: Regex = Regex::new("^/(\\S)*>").unwrap();
@@ -9,7 +10,6 @@ lazy_static! {
 }
 
 pub struct TargetCLI {
-    #[allow(dead_code)]
     /// Shell
     pub cmd: ControlModule,
     /// This is the stream opened into the targetcli command on the remove server

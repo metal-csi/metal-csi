@@ -1,20 +1,23 @@
-use self::iscsi::ISCSIModule;
+pub use self::filesystem::FilesystemType;
+use self::iscsi::{ISCSIModule, ISCSIOptions};
 use self::nfs::{NFSModule, NFSOptions};
+use self::zfs::ZFSOptions;
 use crate::control::ControlModule;
 use crate::error::AppError;
-use crate::iscsi::ISCSIOptions;
 use crate::metadata::{Metadata, Storeable};
-use crate::zfs::ZFSOptions;
 use crate::Result;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+mod filesystem;
 mod iscsi;
+mod mounter;
 mod nfs;
+mod zfs;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StorageInfo {
     ISCSI {
         options: ISCSIOptions,
@@ -100,12 +103,12 @@ impl Storage {
         params: &HashMap<String, String>,
     ) -> Result<StorageInfo> {
         match params.get("type").map(|s| s.as_str()) {
-            Some("iscsi") => {
+            Some("zfs-iscsi") => {
                 let options = ISCSIOptions::new(params)?;
                 let zfs = ZFSOptions::new(params)?;
                 Ok(StorageInfo::ISCSI { options, zfs })
             }
-            Some("nfs") => {
+            Some("zfs-nfs") => {
                 let options = NFSOptions::new(params)?;
                 let zfs = ZFSOptions::new(params)?;
                 Ok(StorageInfo::NFS { options, zfs })

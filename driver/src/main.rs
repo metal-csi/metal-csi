@@ -11,7 +11,7 @@ extern crate lazy_static;
 extern crate serde;
 
 pub use app::App;
-use error::{AppError, Result};
+use error::Result;
 use flexi_logger::{AdaptiveFormat, Logger};
 use std::str::FromStr;
 
@@ -21,12 +21,8 @@ mod config;
 mod control;
 mod csi;
 mod error;
-mod iscsi;
 mod metadata;
-mod sock;
 mod storage;
-mod util;
-mod zfs;
 
 #[tokio::main]
 async fn main() -> Result<()> {

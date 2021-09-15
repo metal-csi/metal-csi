@@ -1,8 +1,6 @@
 use crate::config::ControlMode;
 use crate::control::local::LocalShell;
 use crate::error::AppError;
-use crate::util::Mount;
-use crate::zfs::ZFS;
 use crate::Result;
 use async_trait::async_trait;
 use regex::Regex;
@@ -64,16 +62,6 @@ pub trait ControlStreamTrait: Send + Sync + Debug {
 }
 
 impl ControlModule {
-    pub async fn get_zfs(&self) -> Result<ZFS> {
-        self.connect().await?;
-        Ok(self.clone().into())
-    }
-
-    pub async fn get_mount(&self) -> Result<Mount> {
-        self.connect().await?;
-        Ok(self.clone().into())
-    }
-
     pub fn new(config: &ControlMode) -> Result<ControlModule> {
         match config {
             ControlMode::Local { sudo } => Ok(ControlModule(Arc::new(Box::new(LocalShell {

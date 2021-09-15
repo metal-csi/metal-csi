@@ -1,14 +1,20 @@
 use std::fmt::Write;
 
-use super::FilesystemType;
 use crate::control::ControlModule;
 use crate::error::AppError;
+use crate::storage::FilesystemType;
 use crate::Result;
 
-#[derive(Debug, Deref, DerefMut, From)]
+impl ControlModule {
+    pub async fn mounter(&self) -> Result<Mount> {
+        self.connect().await?;
+        Ok(self.clone().into())
+    }
+}
+
+#[derive(Debug, Deref, DerefMut, From, Into)]
 pub struct Mount(ControlModule);
 
-#[allow(dead_code)]
 impl Mount {
     pub async fn mount(&self, fs: &FilesystemType, device: &str, path: &str) -> Result<()> {
         self.exec_checked(&format!("mkdir -p {}", path)).await?;

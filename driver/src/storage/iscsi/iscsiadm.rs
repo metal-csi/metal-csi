@@ -1,6 +1,7 @@
 use super::*;
+use regex::Regex;
 
-#[derive(Debug, Deref, DerefMut, From)]
+#[derive(Debug, Deref, DerefMut, From, Into)]
 pub struct Iscsiadm(ControlModule);
 
 lazy_static! {

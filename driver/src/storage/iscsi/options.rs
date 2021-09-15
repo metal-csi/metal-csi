@@ -1,14 +1,7 @@
 use super::*;
-use crate::control::{ControlModule, ControlStream};
-use crate::util::FilesystemType;
+use crate::control::ControlModule;
 use crate::Result;
-pub use iscsiadm::*;
-use regex::Regex;
 use std::collections::HashMap;
-pub use targetcli::*;
-
-mod iscsiadm;
-mod targetcli;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ISCSIOptions {

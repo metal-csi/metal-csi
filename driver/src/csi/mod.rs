@@ -1,4 +1,4 @@
-use crate::sock::UnixStream;
+use self::sock::UnixStream;
 pub use crate::App;
 use crate::Result;
 use futures::TryFutureExt;
@@ -10,6 +10,7 @@ use tonic::transport::Server;
 mod controller;
 mod identity;
 mod node;
+mod sock;
 
 pub mod spec {
     tonic::include_proto!("csi.v1");

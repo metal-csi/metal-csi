@@ -32,7 +32,14 @@ impl ZFSOptions {
     }
 }
 
-#[derive(Debug, Deref, DerefMut, From)]
+impl ControlModule {
+    pub async fn zfs(&self) -> Result<ZFS> {
+        self.connect().await?;
+        Ok(self.clone().into())
+    }
+}
+
+#[derive(Debug, Deref, DerefMut, From, Into)]
 pub struct ZFS(ControlModule);
 
 impl ZFS {

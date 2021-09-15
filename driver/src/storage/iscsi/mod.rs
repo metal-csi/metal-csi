@@ -1,5 +1,12 @@
+pub use self::iscsiadm::*;
+pub use self::options::*;
+pub use self::targetcli::*;
 use super::*;
-use crate::{control::ControlModule, iscsi::ISCSIOptions, util::FilesystemType};
+use crate::{control::ControlModule, control::ControlStream};
+
+mod iscsiadm;
+mod options;
+mod targetcli;
 
 #[derive(Debug)]
 pub struct ISCSIModule {
@@ -14,7 +21,7 @@ impl StorageModule for ISCSIModule {
         info!("Creating {}", name);
         let parent_dataset = self.zfs.parent_dataset.as_str();
         let dataset_name = format!("{}{}", parent_dataset, name);
-        let zfs = self.control.get_zfs().await?;
+        let zfs = self.control.zfs().await?;
         let dataset = zfs.get_dataset(dataset_name.as_str()).await?;
         if dataset.is_none() {
             zfs.create_dataset(dataset_name.as_str(), Some(provision_size))
@@ -69,7 +76,7 @@ impl StorageModule for ISCSIModule {
         iscsiadm.login(&target_name, target_portal).await?;
         let disk_path = iscsiadm.wait_for_disk(&target_name, target_portal).await?;
 
-        let mounts = self.control.get_mount().await?;
+        let mounts = self.control.mounter().await?;
         let block_device = mounts
             .get_block_device(&disk_path)
             .await?
@@ -92,7 +99,7 @@ impl StorageModule for ISCSIModule {
     async fn unstage(&self, volume_id: &str, staging_path: &str) -> Result<()> {
         info!("Unstaging {}", volume_id);
         let control = &self.control;
-        control.get_mount().await?.umount(&staging_path).await?;
+        control.mounter().await?.umount(&staging_path).await?;
         let iscsiadm = control.get_iscsiadm().await?;
         let target_name = iscsiadm.get_target(&self.options.base_iqn, volume_id);
         iscsiadm
@@ -104,7 +111,7 @@ impl StorageModule for ISCSIModule {
     async fn mount(&self, volume_id: &str, staging_path: &str, target_path: &str) -> Result<()> {
         info!("Mounting {}", volume_id);
         self.control
-            .get_mount()
+            .mounter()
             .await?
             .mount(&FilesystemType::Bind, staging_path, target_path)
             .await?;
@@ -113,7 +120,7 @@ impl StorageModule for ISCSIModule {
 
     async fn unmount(&self, volume_id: &str, target_path: &str) -> Result<()> {
         info!("Unmounting {}", volume_id);
-        self.control.get_mount().await?.umount(target_path).await?;
+        self.control.mounter().await?.umount(target_path).await?;
         Ok(())
     }
 }

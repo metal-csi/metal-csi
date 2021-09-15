@@ -1,5 +1,5 @@
 use super::*;
-use crate::{control::ControlModule, util::FilesystemType, zfs::ZFSOptions};
+use crate::control::ControlModule;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NFSOptions {
@@ -39,7 +39,7 @@ impl StorageModule for NFSModule {
         info!("Creating {}", name);
         let parent_dataset = self.zfs.parent_dataset.as_str();
         let dataset_name = format!("{}{}", parent_dataset, name);
-        let zfs = self.control.get_zfs().await?;
+        let zfs = self.control.zfs().await?;
         let dataset = zfs.get_dataset(dataset_name.as_str()).await?;
         if dataset.is_none() {
             zfs.create_dataset(dataset_name.as_str(), None).await?;
@@ -79,7 +79,7 @@ impl StorageModule for NFSModule {
         info!("Mounting {}", volume_id);
         let nfs_path = format!("{}:/{}", self.options.host, volume_id);
         self.control
-            .get_mount()
+            .mounter()
             .await?
             .mount(&FilesystemType::NFS, &nfs_path, target_path)
             .await?;
@@ -88,7 +88,7 @@ impl StorageModule for NFSModule {
 
     async fn unmount(&self, volume_id: &str, target_path: &str) -> Result<()> {
         info!("Unmounting {}", volume_id);
-        self.control.get_mount().await?.umount(target_path).await?;
+        self.control.mounter().await?.umount(target_path).await?;
         Ok(())
     }
 }
